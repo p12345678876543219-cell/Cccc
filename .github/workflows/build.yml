@@ -1,0 +1,35 @@
+name: Build iOS Dylib Tweak
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-13
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies & Theos
+      run: |
+        brew install ldid
+        export THEOS=~/theos
+        git clone --recursive https://github.com/theos/theos.git $THEOS
+        curl -LO https://github.com/theos/sdks/archive/master.zip
+        unzip master.zip
+        mv sdks-master/iPhoneOS14.5.sdk $THEOS/sdks/
+        rm -rf master.zip sdks-master
+
+    - name: Compile Dylib
+      run: |
+        export THEOS=~/theos
+        make clean package FINALPACKAGE=1
+
+    - name: Upload Artifact (.dylib)
+      uses: actions/upload-artifact@v3
+      with:
+        name: CocCocGeminiSolver-dylib
+        path: .theos/obj/debug/*.dylib
